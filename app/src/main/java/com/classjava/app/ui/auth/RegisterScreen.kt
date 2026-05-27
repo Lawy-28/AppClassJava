@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -47,6 +47,7 @@ fun RegisterScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .statusBarsPadding()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -259,9 +260,9 @@ fun RegisterScreen(
 
                                 val result =
                                     authRepository.register(
-                                        email,
-                                        password,
-                                        username
+                                        email.trim(),
+                                        password.trim(),
+                                        username.trim()
                                     )
 
                                 isLoading = false

@@ -1,15 +1,17 @@
 package com.classjava.app.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -20,45 +22,136 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onLogoutSuccess: () -> Unit
+    onNavigateToProfile: () -> Unit,
 ) {
-    val coroutineScope = rememberCoroutineScope()
     val authRepository = remember { AuthRepository() }
-    var studentName by remember { mutableStateOf("Siswa") }
+    var studentName by remember { mutableStateOf("User!") }
 
-    // Ambil nama siswa yang sedang login dari Appwrite
     LaunchedEffect(Unit) {
         authRepository.getCurrentUser().onSuccess { user ->
-            studentName = user.name
+            studentName = user.name + "!"
         }.onFailure {
-            // Jika gagal, biarkan default "Siswa"
+            // Default "User!"
         }
     }
 
-    // Warna tema sesuai desain Anda
     val primaryBlue = Color(0xFF0F3D6F)
-    val backgroundCard = Color(0xFFF5F7FA)
+    val backgroundCard = Color(0xFFE9EDF2)
+    val accentOrange = Color(0xFFE28743)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard", fontWeight = FontWeight.Bold, color = Color.White) },
+                title = { 
+                    Text(
+                        "Class [Java]", 
+                        fontWeight = FontWeight.Bold, 
+                        color = Color.White,
+                        fontSize = 20.sp
+                    ) 
+                },
+                windowInsets = TopAppBarDefaults.windowInsets,
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryBlue),
                 actions = {
-                    // Menggunakan TextButton bertuliskan Keluar agar tidak error nyari icon extend
-                    TextButton(onClick = {
-                        coroutineScope.launch {
-                            authRepository.logout().onSuccess {
-                                onLogoutSuccess()
-                            }.onFailure {
-                                // Handle failure if needed
-                            }
-                        }
-                    }) {
-                        Text("Keluar", color = Color.White, fontWeight = FontWeight.Bold)
+                    // Search Bar
+                    Row(
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .width(110.dp)
+                            .height(34.dp)
+                            .background(Color.White, shape = RoundedCornerShape(17.dp))
+                            .padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Search", color = Color.Gray, fontSize = 13.sp)
                     }
                 }
             )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(90.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                // The actual bar
+                BottomAppBar(
+                    containerColor = primaryBlue,
+                    modifier = Modifier.height(65.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Home Icon (Active)
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 75.dp, height = 40.dp)
+                                    .background(accentOrange, shape = RoundedCornerShape(20.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Home, 
+                                    contentDescription = null, 
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+
+                        // Space for the floating button
+                        Spacer(modifier = Modifier.width(80.dp))
+
+                        // Profile Icon (Inactive)
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            IconButton(
+                                onClick = onNavigateToProfile,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person, 
+                                    contentDescription = null, 
+                                    tint = Color.White, 
+                                    modifier = Modifier.size(38.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // The Floating Circle (Leaderboard)
+                Box(
+                    modifier = Modifier
+                        .offset(y = (-10).dp)
+                        .size(80.dp)
+                        .background(primaryBlue, shape = CircleShape)
+                        .border(1.5.dp, Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Leaderboard,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(38.dp)
+                    )
+                }
+            }
         }
     ) { innerPadding ->
         Column(
@@ -66,35 +159,43 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(Color.White)
                 .padding(innerPadding)
-                .padding(24.dp),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Kotak Selamat Datang (Welcome Card)
+            // Selamat Datang Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = backgroundCard),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(20.dp),
+                    modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = null,
-                        tint = primaryBlue,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(45.dp)
+                            .background(Color.LightGray, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
                             text = "Selamat Datang,",
-                            fontSize = 14.sp,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
                             color = Color.Gray
                         )
                         Text(
                             text = studentName,
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = primaryBlue
                         )
@@ -102,56 +203,36 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Box Informasi Tambahan
-            Box(
+            // Main Content Card
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(backgroundCard, shape = RoundedCornerShape(12.dp))
-                    .padding(16.dp)
+                    .weight(1f),
+                colors = CardDefaults.cardColors(containerColor = backgroundCard),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.padding(20.dp)
+                ) {
                     Text(
-                        text = "Materi Utama: Fundamentals Java",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.DarkGray
+                        text = "Materi Utama : -",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = primaryBlue
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Status Kuis: Belum Dimulai",
-                        fontSize = 14.sp,
+                        text = "Status Kuis : Belum Dimulai",
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFE28743) // Aksen Oranye sesuai desain
+                        color = accentOrange
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Tombol Utama Mulai Kuis (Menggunakan ArrowForward yang pasti ada di library default)
-            Button(
-                onClick = { /* Tempat rute halaman soal kuis */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                shape = RoundedCornerShape(26.dp)
-            ) {
-                Text(
-                    text = "Mulai Kuis Java",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Default.ArrowForward,
-                    contentDescription = null,
-                    tint = Color.White
-                )
-            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

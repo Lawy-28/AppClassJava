@@ -36,10 +36,15 @@ class AuthRepository {
     suspend fun login(email: String, password: String): Result<Session> {
         return withContext(Dispatchers.IO) {
             try {
+                // Bersihkan sesi lama jika masih nyangkut agar bisa login baru
+                try {
+                    accountService.deleteSession(sessionId = "current")
+                } catch (_: Exception) { /* Abaikan */ }
+
                 // Membuat sesi login menggunakan email & password
                 val session = accountService.createEmailPasswordSession(
                     email = email,
-                    password = password
+                    password = password,
                 )
                 Result.success(session)
             } catch (e: AppwriteException) {

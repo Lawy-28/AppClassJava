@@ -4,15 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.classjava.app.config.AppwriteClient
+import com.classjava.app.repository.AuthRepository
 import com.classjava.app.ui.auth.LoginScreen
 import com.classjava.app.ui.auth.RegisterScreen
 import com.classjava.app.ui.home.HomeScreen
+import com.classjava.app.ui.home.ProfileScreen
 import com.classjava.app.ui.theme.ClassJavaTheme
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,10 +32,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ClassJavaTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    // Memanggil Navigasi Utama Aplikasi dengan menerapkan padding dari Scaffold
-                    AppNavigation(modifier = Modifier.padding(innerPadding))
-                }
+                // Langsung panggil AppNavigation tanpa padding Scaffold agar bar bisa full ke atas
+                AppNavigation()
             }
         }
     }
@@ -41,10 +43,34 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation(modifier: Modifier = Modifier) {
     // NavController untuk mengatur perpindahan halaman
     val navController = rememberNavController()
+    val authRepository = remember { AuthRepository() }
+
+    // State untuk menentukan halaman awal secara dinamis
+    var startDestination by remember { mutableStateOf<String?>(null) }
+
+    // Cek status login saat aplikasi dibuka
+    LaunchedEffect(Unit) {
+        authRepository.getCurrentUser().onSuccess {
+            startDestination = "home"
+        }.onFailure {
+            startDestination = "login"
+        }
+    }
+
+    // Tampilkan Loading saat mengecek sesi
+    if (startDestination == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator(color = Color(0xFF0F3D6F))
+        }
+        return
+    }
 
     NavHost(
         navController = navController,
-        startDestination = "login", // Halaman pertama yang dibuka adalah Login
+        startDestination = startDestination!!,
         modifier = modifier
     ) {
         // 1. Rute untuk Halaman Login
@@ -63,7 +89,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             )
         }
 
-        // 2. Rute untuk Halaman Register
+        // 3. Rute untuk Halaman Register
         composable("register") {
             RegisterScreen(
                 onRegisterSuccess = {
@@ -81,14 +107,28 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             )
         }
 
-        // 3. Rute untuk Halaman Home (Dashboard Utama)
         composable("home") {
             HomeScreen(
+                onNavigateToProfile = {
+                    navController.navigate("profile")
+                }
+            )
+        }
+
+        composable("profile") {
+            ProfileScreen(
                 onLogoutSuccess = {
-                    // Kembali ke login dan bersihkan rute home dari history setelah logout
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
+                },
+                onNavigateToHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                },
+                onNavigateToLeaderboard = {
+                    // Placeholder
                 }
             )
         }

@@ -7,6 +7,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +22,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.classjava.app.R
@@ -28,7 +32,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit
+    onNavigateToRegister: () -> Unit,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -36,7 +40,8 @@ fun LoginScreen(
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(value = false) }
+    var isLoading by remember { mutableStateOf(value = false) }
 
     val primaryBlue = Color(0xFF0F3D6F)
     val backgroundCard = Color(0xFFF5F7FA)
@@ -46,6 +51,7 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .statusBarsPadding()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -178,9 +184,18 @@ fun LoginScreen(
                 ),
 
                 shape = RoundedCornerShape(24.dp),
-                visualTransformation =
-                    PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val image = if (passwordVisible)
+                        Icons.Filled.Visibility
+                    else Icons.Filled.VisibilityOff
 
+                    val description = if (passwordVisible) "Sembunyikan password" else "Tampilkan password"
+
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = description, tint = primaryBlue)
+                    }
+                },
                 singleLine = true,
 
                 keyboardOptions = KeyboardOptions(
@@ -215,8 +230,8 @@ fun LoginScreen(
 
                                 val result =
                                     authRepository.login(
-                                        email,
-                                        password
+                                        email.trim(),
+                                        password.trim()
                                     )
 
                                 isLoading = false
@@ -231,11 +246,10 @@ fun LoginScreen(
 
                                     onLoginSuccess()
 
-                                }.onFailure { error ->
-
+                                }.onFailure {
                                     Toast.makeText(
                                         context,
-                                        "Error: ${error.message}",
+                                        "Kata Sandi atau Email yang anda masukkan salah",
                                         Toast.LENGTH_LONG
                                     ).show()
                                 }
