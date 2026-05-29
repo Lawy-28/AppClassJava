@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -29,10 +31,13 @@ fun ProfileScreen(
     var studentName by remember { mutableStateOf("Username") }
     var studentEmail by remember { mutableStateOf("user@gmail.com") }
 
+    val isPreview = LocalInspectionMode.current
     LaunchedEffect(Unit) {
-        authRepository.getCurrentUser().onSuccess { user ->
-            studentName = user.name
-            studentEmail = user.email
+        if (!isPreview) {
+            authRepository.getCurrentUser().onSuccess { user ->
+                studentName = user.name
+                studentEmail = user.email
+            }
         }
     }
 
@@ -231,4 +236,14 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ProfileScreenPreview() {
+    ProfileScreen(
+        onLogoutSuccess = {},
+        onNavigateToHome = {},
+        onNavigateToLeaderboard = {}
+    )
 }

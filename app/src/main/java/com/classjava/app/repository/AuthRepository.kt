@@ -11,7 +11,7 @@ import io.appwrite.models.User as AppwriteUser
 
 class AuthRepository {
 
-    private val accountService = AppwriteClient.account
+    private val accountService by lazy { AppwriteClient.account }
 
     // 1. Fitur Daftar Akun Baru (Register)
     suspend fun register(email: String, password: String, name: String): Result<AppwriteUser<Map<String, Any>>> {

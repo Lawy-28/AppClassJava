@@ -3,22 +3,26 @@ package com.classjava.app.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.classjava.app.repository.AuthRepository
-import kotlinx.coroutines.launch
 
+@Suppress("SpellCheckingInspection")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -37,6 +41,7 @@ fun HomeScreen(
 
     val primaryBlue = Color(0xFF0F3D6F)
     val backgroundCard = Color(0xFFE9EDF2)
+    val topicSectionBg = Color(0xFFFDF5F2)
     val accentOrange = Color(0xFFE28743)
 
     Scaffold(
@@ -53,24 +58,13 @@ fun HomeScreen(
                 windowInsets = TopAppBarDefaults.windowInsets,
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryBlue),
                 actions = {
-                    // Search Bar
-                    Row(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .width(110.dp)
-                            .height(34.dp)
-                            .background(Color.White, shape = RoundedCornerShape(17.dp))
-                            .padding(horizontal = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    IconButton(onClick = { /* Search */ }) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = Color.Gray,
-                            modifier = Modifier.size(18.dp)
+                            contentDescription = "Search",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Search", color = Color.Gray, fontSize = 13.sp)
                     }
                 }
             )
@@ -82,7 +76,6 @@ fun HomeScreen(
                     .height(90.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
-                // The actual bar
                 BottomAppBar(
                     containerColor = primaryBlue,
                     modifier = Modifier.height(65.dp),
@@ -92,7 +85,6 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Home Icon (Active)
                         Box(
                             modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.Center
@@ -112,10 +104,8 @@ fun HomeScreen(
                             }
                         }
 
-                        // Space for the floating button
                         Spacer(modifier = Modifier.width(80.dp))
 
-                        // Profile Icon (Inactive)
                         Box(
                             modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.Center
@@ -135,7 +125,6 @@ fun HomeScreen(
                     }
                 }
 
-                // The Floating Circle (Leaderboard)
                 Box(
                     modifier = Modifier
                         .offset(y = (-10).dp)
@@ -159,10 +148,12 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(Color.White)
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Selamat Datang Card
+            Spacer(modifier = Modifier.height(16.dp))
+            // Selamat Datang
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = backgroundCard),
@@ -174,7 +165,7 @@ fun HomeScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(45.dp)
+                            .size(50.dp)
                             .background(Color.LightGray, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -182,10 +173,10 @@ fun HomeScreen(
                             imageVector = Icons.Default.Person,
                             contentDescription = null,
                             tint = Color.Black,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(35.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(
                             text = "Selamat Datang,",
@@ -203,36 +194,133 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Main Content Card
+            // Topic Materi Container
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                colors = CardDefaults.cardColors(containerColor = backgroundCard),
-                shape = RoundedCornerShape(12.dp)
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = topicSectionBg),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF0E0D6))
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Materi Utama : -",
+                        text = "Topik Materi",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryBlue
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Status Kuis : Belum Dimulai",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = accentOrange
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TopicItem(
+                        title = "Inheritence",
+                        icon = Icons.Default.AccountTree,
+                        onItemClick = { /* Handle Click */ }
                     )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    TopicItem(
+                        title = "Arrays",
+                        icon = Icons.AutoMirrored.Filled.List,
+                        onItemClick = { /* Handle Click */ }
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    TopicItem(
+                        title = "Looping",
+                        icon = Icons.Default.SyncAlt,
+                        onItemClick = { /* Handle Click */ }
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    HomeScreen(onNavigateToProfile = {})
+}
+
+@Suppress("SpellCheckingInspection")
+@Composable
+fun TopicItem(
+    title: String,
+    icon: ImageVector,
+    onItemClick: () -> Unit
+) {
+    val itemBg = Color(0xFFE0E0E0)
+    val greenColor = Color(0xFF129912)
+    val iconColor = Color(0xFF6259FF)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(110.dp),
+        colors = CardDefaults.cardColors(containerColor = itemBg),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.width(20.dp))
+            
+            // Icon Square
+            Surface(
+                modifier = Modifier.size(50.dp),
+                shape = RoundedCornerShape(8.dp),
+                color = Color.White
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(20.dp))
+
+            Text(
+                text = title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF333333),
+                modifier = Modifier.weight(1f)
+            )
+
+            // Green Arrow Button
+            Surface(
+                onClick = onItemClick,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(60.dp),
+                color = greenColor,
+                shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Next",
+                        tint = Color.White,
+                        modifier = Modifier.size(35.dp)
+                    )
+                }
+            }
         }
     }
 }
