@@ -10,41 +10,44 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.classjava.app.repository.AuthRepository
-import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.classjava.app.viewmodel.AuthState
+import com.classjava.app.viewmodel.AuthViewModel
 
 @Composable
 fun ProfileScreen(
     onLogoutSuccess: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToLeaderboard: () -> Unit,
+    // ViewModel dipakai bersama — data user sudah tersedia dari HomeScreen
+    authViewModel: AuthViewModel = viewModel()
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val authRepository = remember { AuthRepository() }
-    var studentName by remember { mutableStateOf("Username") }
-    var studentEmail by remember { mutableStateOf("user@gmail.com") }
-
-    val isPreview = LocalInspectionMode.current
-    LaunchedEffect(Unit) {
-        if (!isPreview) {
-            authRepository.getCurrentUser().onSuccess { user ->
-                studentName = user.name
-                studentEmail = user.email
-            }
-        }
-    }
+    // Observe state dan data user dari ViewModel
+    val authState by authViewModel.authState.collectAsState()
+    val studentName by authViewModel.currentUserName.collectAsState()
+    val studentEmail by authViewModel.currentUserEmail.collectAsState()
 
     val primaryBlue = Color(0xFF0F3D6F)
     val backgroundCard = Color(0xFFE9EDF2)
     val accentOrange = Color(0xFFE28743)
     val logoutRed = Color(0xFF8B0000)
+
+    // Reaksi terhadap state logout dari ViewModel
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Success -> {
+                authViewModel.resetState()
+                onLogoutSuccess()
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -54,7 +57,6 @@ fun ProfileScreen(
                     .height(90.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
-                // The actual bar
                 BottomAppBar(
                     containerColor = primaryBlue,
                     modifier = Modifier.height(65.dp),
@@ -64,7 +66,6 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Home Icon (Inactive)
                         Box(
                             modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.Center
@@ -74,18 +75,16 @@ fun ProfileScreen(
                                 modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Home, 
-                                    contentDescription = null, 
-                                    tint = Color.White, 
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = null,
+                                    tint = Color.White,
                                     modifier = Modifier.size(28.dp)
                                 )
                             }
                         }
 
-                        // Space for the floating button
                         Spacer(modifier = Modifier.width(80.dp))
 
-                        // Profile Icon (Active)
                         Box(
                             modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.Center
@@ -97,9 +96,9 @@ fun ProfileScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Person, 
-                                    contentDescription = null, 
-                                    tint = Color.White, 
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = Color.White,
                                     modifier = Modifier.size(28.dp)
                                 )
                             }
@@ -107,7 +106,6 @@ fun ProfileScreen(
                     }
                 }
 
-                // The Floating Circle (Leaderboard)
                 Box(
                     modifier = Modifier
                         .offset(y = (-10).dp)
@@ -141,7 +139,7 @@ fun ProfileScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Profile Image Placeholder
+            // Avatar placeholder
             Box(
                 modifier = Modifier
                     .size(120.dp)
@@ -158,6 +156,7 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Nama dari ViewModel
             Text(
                 text = studentName,
                 fontSize = 22.sp,
@@ -188,6 +187,7 @@ fun ProfileScreen(
                         ) {
                             Icon(Icons.Default.Person, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(16.dp))
+                            // Nama dari ViewModel
                             Text(text = studentName, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -206,6 +206,7 @@ fun ProfileScreen(
                         ) {
                             Icon(Icons.Default.Email, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(16.dp))
+                            // Email dari ViewModel
                             Text(text = studentEmail, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -214,23 +215,24 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Logout Button
-            OutlinedButton(
-                onClick = {
-                    coroutineScope.launch {
-                        authRepository.logout().onSuccess {
-                            onLogoutSuccess()
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth(0.7f)
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, logoutRed),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = logoutRed)
-            ) {
-                Text(text = "Logout", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            // Tombol Logout — cukup panggil fungsi ViewModel
+            if (authState is AuthState.Loading) {
+                CircularProgressIndicator(color = logoutRed)
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        // View hanya memanggil fungsi ViewModel, tidak ada logika di sini
+                        authViewModel.logout()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth(0.7f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, logoutRed),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = logoutRed)
+                ) {
+                    Text(text = "Logout", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))

@@ -11,28 +11,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.classjava.app.config.AppwriteClient
-import com.classjava.app.repository.AuthRepository
 import com.classjava.app.ui.auth.LoginScreen
 import com.classjava.app.ui.auth.RegisterScreen
 import com.classjava.app.ui.home.HomeScreen
 import com.classjava.app.ui.home.ProfileScreen
+import com.classjava.app.ui.home.SearchScreen
+import com.classjava.app.ui.quiz.QuizPreviewScreen
 import com.classjava.app.ui.theme.ClassJavaTheme
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import com.classjava.app.viewmodel.AuthViewModel
+import com.classjava.app.viewmodel.SessionState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        // Inisialisasi Appwrite Cloud
         AppwriteClient.initialize(applicationContext)
-
         setContent {
             ClassJavaTheme {
-                // Langsung panggil AppNavigation tanpa padding Scaffold agar bar bisa full ke atas
                 AppNavigation()
             }
         }
@@ -41,80 +41,71 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier) {
-    // NavController untuk mengatur perpindahan halaman
     val navController = rememberNavController()
-    val authRepository = remember { AuthRepository() }
+    val authViewModel: AuthViewModel = viewModel()
+    val sessionState by authViewModel.sessionState.collectAsState()
 
-    // State untuk menentukan halaman awal secara dinamis
-    var startDestination by remember { mutableStateOf<String?>(null) }
-
-    // Cek status login saat aplikasi dibuka
-    LaunchedEffect(Unit) {
-        authRepository.getCurrentUser().onSuccess {
-            startDestination = "home"
-        }.onFailure {
-            startDestination = "login"
-        }
-    }
-
-    // Tampilkan Loading saat mengecek sesi
-    if (startDestination == null) {
+    if (sessionState is SessionState.Checking) {
         Box(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
+            contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator(color = Color(0xFF0F3D6F))
         }
         return
     }
 
+    val startDestination = if (sessionState is SessionState.LoggedIn) "home" else "login"
+
     NavHost(
         navController = navController,
-        startDestination = startDestination!!,
+        startDestination = startDestination,
         modifier = modifier
     ) {
-        // 1. Rute untuk Halaman Login
+        // 1. Login
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
-                    // Pindah ke Dashboard/Menu Utama Kuis setelah sukses login
                     navController.navigate("home") {
-                        popUpTo("login") { inclusive = true } // Bersihkan history agar tidak bisa back ke login
+                        popUpTo("login") { inclusive = true }
                     }
                 },
-                onNavigateToRegister = {
-                    // Pindah ke halaman register saat tombol "Daftar Akun Baru" diklik
-                    navController.navigate("register")
-                }
+                onNavigateToRegister = { navController.navigate("register") },
+                authViewModel = authViewModel
             )
         }
 
-        // 3. Rute untuk Halaman Register
+        // 2. Register
         composable("register") {
             RegisterScreen(
                 onRegisterSuccess = {
-                    // Setelah sukses daftar, kembalikan siswa ke halaman login
                     navController.navigate("login") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
                 onNavigateToLogin = {
-                    // Kembali ke login jika tombol "Masuk" diklik
                     navController.navigate("login") {
                         popUpTo("login") { inclusive = true }
                     }
-                }
+                },
+                authViewModel = authViewModel
             )
         }
 
+        // 3. Home
         composable("home") {
             HomeScreen(
-                onNavigateToProfile = {
-                    navController.navigate("profile")
-                }
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToSearch = { navController.navigate("search") },
+                // Navigasi ke preview kuis, encode route pakai replace agar tidak bentrok
+                onNavigateToQuizPreview = { route ->
+                    navController.navigate("quiz_preview/${route.replace("/", "_")}")
+                },
+                authViewModel = authViewModel
             )
         }
 
+        // 4. Profile
         composable("profile") {
             ProfileScreen(
                 onLogoutSuccess = {
@@ -127,9 +118,29 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         popUpTo("home") { inclusive = true }
                     }
                 },
-                onNavigateToLeaderboard = {
-                    // Placeholder
+                onNavigateToLeaderboard = { /* TODO */ },
+                authViewModel = authViewModel
+            )
+        }
+
+        // 5. Search
+        composable("search") {
+            SearchScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onTopicSelected = { route ->
+                    navController.navigate("quiz_preview/${route.replace("/", "_")}")
                 }
+            )
+        }
+
+        // 6. Quiz Preview — menerima route topik sebagai argumen
+        composable("quiz_preview/{topicRoute}") { backStackEntry ->
+            val encodedRoute = backStackEntry.arguments?.getString("topicRoute") ?: ""
+            val topicRoute = encodedRoute.replace("_", "/") // Kembalikan ke format "quiz/arrays"
+            QuizPreviewScreen(
+                topicRoute = topicRoute,
+                onNavigateBack = { navController.popBackStack() },
+                onMulaiKuis = { /* TODO: navigasi ke halaman soal */ }
             )
         }
     }

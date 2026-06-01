@@ -16,49 +16,49 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.classjava.app.repository.AuthRepository
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.classjava.app.viewmodel.AuthViewModel
 
 @Suppress("SpellCheckingInspection")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToProfile: () -> Unit,
+    onNavigateToSearch: () -> Unit,
+    onNavigateToQuizPreview: (String) -> Unit,      // ← TAMBAHAN: callback ke SearchScreen
+    authViewModel: AuthViewModel = viewModel()
 ) {
-    val authRepository = remember { AuthRepository() }
-    var studentName by remember { mutableStateOf("User!") }
-
-    LaunchedEffect(Unit) {
-        authRepository.getCurrentUser().onSuccess { user ->
-            studentName = user.name + "!"
-        }.onFailure {
-            // Default "User!"
-        }
-    }
+    val studentName by authViewModel.currentUserName.collectAsState()
 
     val primaryBlue = Color(0xFF0F3D6F)
     val backgroundCard = Color(0xFFE9EDF2)
     val topicSectionBg = Color(0xFFFDF5F2)
     val accentOrange = Color(0xFFE28743)
 
+    LaunchedEffect(Unit) {
+        authViewModel.loadCurrentUser()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "Class [Java]", 
-                        fontWeight = FontWeight.Bold, 
+                        "Class [Java]",
+                        fontWeight = FontWeight.Bold,
                         color = Color.White,
                         fontSize = 20.sp
-                    ) 
+                    )
                 },
                 windowInsets = TopAppBarDefaults.windowInsets,
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryBlue),
                 actions = {
-                    IconButton(onClick = { /* Search */ }) {
+                    // ← BERUBAH: onClick sekarang navigasi ke SearchScreen
+                    IconButton(onClick = onNavigateToSearch) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
@@ -96,8 +96,8 @@ fun HomeScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Home, 
-                                    contentDescription = null, 
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = null,
                                     tint = Color.White,
                                     modifier = Modifier.size(28.dp)
                                 )
@@ -115,9 +115,9 @@ fun HomeScreen(
                                 modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Person, 
-                                    contentDescription = null, 
-                                    tint = Color.White, 
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = Color.White,
                                     modifier = Modifier.size(38.dp)
                                 )
                             }
@@ -153,7 +153,7 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            // Selamat Datang
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = backgroundCard),
@@ -185,7 +185,7 @@ fun HomeScreen(
                             color = Color.Gray
                         )
                         Text(
-                            text = studentName,
+                            text = "$studentName!",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = primaryBlue
@@ -196,7 +196,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Topic Materi Container
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = topicSectionBg),
@@ -213,44 +212,34 @@ fun HomeScreen(
                         fontWeight = FontWeight.Bold,
                         color = primaryBlue
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     TopicItem(
-                        title = "Inheritence",
+                        title = "Inheritance",
                         icon = Icons.Default.AccountTree,
-                        onItemClick = { /* Handle Click */ }
+                        onItemClick = { onNavigateToQuizPreview("quiz/inheritance") }
                     )
-
                     Spacer(modifier = Modifier.height(12.dp))
-
                     TopicItem(
                         title = "Arrays",
                         icon = Icons.AutoMirrored.Filled.List,
-                        onItemClick = { /* Handle Click */ }
+                        onItemClick = { onNavigateToQuizPreview("quiz/arrays") }
                     )
-
                     Spacer(modifier = Modifier.height(12.dp))
-
                     TopicItem(
                         title = "Looping",
                         icon = Icons.Default.SyncAlt,
-                        onItemClick = { /* Handle Click */ }
+                        onItemClick = { onNavigateToQuizPreview("quiz/looping") }
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    HomeScreen(onNavigateToProfile = {})
 }
 
 @Suppress("SpellCheckingInspection")
@@ -276,8 +265,7 @@ fun TopicItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(20.dp))
-            
-            // Icon Square
+
             Surface(
                 modifier = Modifier.size(50.dp),
                 shape = RoundedCornerShape(8.dp),
@@ -303,7 +291,6 @@ fun TopicItem(
                 modifier = Modifier.weight(1f)
             )
 
-            // Green Arrow Button
             Surface(
                 onClick = onItemClick,
                 modifier = Modifier
@@ -315,7 +302,7 @@ fun TopicItem(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Next",
+                        contentDescription = "Mulai Quiz",
                         tint = Color.White,
                         modifier = Modifier.size(35.dp)
                     )
@@ -323,4 +310,10 @@ fun TopicItem(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    HomeScreen(onNavigateToProfile = {}, onNavigateToSearch = {}, onNavigateToQuizPreview = {})
 }
