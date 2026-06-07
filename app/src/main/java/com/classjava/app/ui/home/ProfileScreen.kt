@@ -1,7 +1,12 @@
 package com.classjava.app.ui.home
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,41 +16,79 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.classjava.app.repository.AuthRepository
+import com.classjava.app.utils.FileUtils
 import com.classjava.app.viewmodel.AuthState
 import com.classjava.app.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
     onLogoutSuccess: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToLeaderboard: () -> Unit,
-    // ViewModel dipakai bersama — data user sudah tersedia dari HomeScreen
     authViewModel: AuthViewModel = viewModel()
 ) {
-    // Observe state dan data user dari ViewModel
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val authRepository = remember { AuthRepository() }
+
     val authState by authViewModel.authState.collectAsState()
     val studentName by authViewModel.currentUserName.collectAsState()
     val studentEmail by authViewModel.currentUserEmail.collectAsState()
+    val profileUrl by authViewModel.profilePictureUrl.collectAsState()
+
+    var isUploading by remember { mutableStateOf(false) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            isUploading = true
+            coroutineScope.launch {
+                val file = FileUtils.uriToFile(context, it)
+                if (file != null) {
+                    // 1. Upload foto baru
+                    val uploadResult = authRepository.uploadProfilePicture(file)
+                    uploadResult.onSuccess { fileId ->
+                        // 2. Ambil user ID saat ini
+                        authRepository.getCurrentUser().onSuccess { user ->
+                            // 3. Update database
+                            authRepository.updateProfilePictureId(user.id, fileId).onSuccess {
+                                // 4. Update UI State
+                                val newUrl = authRepository.getProfilePictureUrl(fileId)
+                                authViewModel.updateProfileUrl(newUrl)
+                                Toast.makeText(context, "Foto profil diperbarui!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }.onFailure {
+                        Toast.makeText(context, "Gagal upload: ${it.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                isUploading = false
+            }
+        }
+    }
 
     val primaryBlue = Color(0xFF0F3D6F)
     val backgroundCard = Color(0xFFE9EDF2)
     val accentOrange = Color(0xFFE28743)
     val logoutRed = Color(0xFF8B0000)
 
-    // Reaksi terhadap state logout dari ViewModel
     LaunchedEffect(authState) {
-        when (authState) {
-            is AuthState.Success -> {
-                authViewModel.resetState()
-                onLogoutSuccess()
-            }
-            else -> {}
+        if (authState is AuthState.Success) {
+            authViewModel.resetState()
+            onLogoutSuccess()
         }
     }
 
@@ -139,19 +182,57 @@ fun ProfileScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Avatar placeholder
+            // Avatar dengan tombol ganti foto (+)
             Box(
                 modifier = Modifier
-                    .size(120.dp)
-                    .background(Color.LightGray, CircleShape),
-                contentAlignment = Alignment.Center
+                    .size(120.dp),
+                contentAlignment = Alignment.BottomEnd
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color.Black,
-                    modifier = Modifier.size(80.dp)
-                )
+                // Tampilan Foto Profil
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(Color.LightGray)
+                        .clickable { launcher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isUploading) {
+                        CircularProgressIndicator(color = primaryBlue)
+                    } else if (profileUrl != null) {
+                        AsyncImage(
+                            model = profileUrl,
+                            contentDescription = "Profile Picture",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(80.dp)
+                        )
+                    }
+                }
+
+                // Tombol Plus (+) untuk ganti foto
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(Color.White, CircleShape)
+                        .border(1.dp, Color.LightGray, CircleShape)
+                        .clip(CircleShape)
+                        .clickable { launcher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Change Photo",
+                        modifier = Modifier.size(22.dp),
+                        tint = Color(0xFF4CAF50)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

@@ -14,13 +14,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.classjava.app.viewmodel.AuthViewModel
 
 @Suppress("SpellCheckingInspection")
@@ -29,10 +32,11 @@ import com.classjava.app.viewmodel.AuthViewModel
 fun HomeScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToSearch: () -> Unit,
-    onNavigateToQuizPreview: (String) -> Unit,      // ← TAMBAHAN: callback ke SearchScreen
+    onNavigateToQuizPreview: (String) -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
     val studentName by authViewModel.currentUserName.collectAsState()
+    val profileUrl by authViewModel.profilePictureUrl.collectAsState()
 
     val primaryBlue = Color(0xFF0F3D6F)
     val backgroundCard = Color(0xFFE9EDF2)
@@ -169,12 +173,23 @@ fun HomeScreen(
                             .background(Color.LightGray, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = Color.Black,
-                            modifier = Modifier.size(35.dp)
-                        )
+                        if (profileUrl != null) {
+                            AsyncImage(
+                                model = profileUrl,
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color.Black,
+                                modifier = Modifier.size(35.dp)
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {

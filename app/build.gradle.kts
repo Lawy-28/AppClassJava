@@ -55,6 +55,7 @@ dependencies {
         exclude(group = "com.squareup.okhttp3", module = "okhttp-bom")
     }
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

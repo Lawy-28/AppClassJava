@@ -44,6 +44,10 @@ class AuthViewModel : ViewModel() {
     private val _currentUserEmail = MutableStateFlow("")
     val currentUserEmail: StateFlow<String> = _currentUserEmail
 
+    // StateFlow untuk menyimpan URL foto profil
+    private val _profilePictureUrl = MutableStateFlow<String?>(null)
+    val profilePictureUrl: StateFlow<String?> = _profilePictureUrl
+
     // Dipanggil sekali saat ViewModel pertama dibuat, untuk cek sesi login
     init {
         checkSession()
@@ -59,11 +63,27 @@ class AuthViewModel : ViewModel() {
                 .onSuccess { user ->
                     _currentUserName.value = user.name
                     _currentUserEmail.value = user.email
+                    // Load data tambahan (profile_id)
+                    loadUserData(user.id)
                     _sessionState.value = SessionState.LoggedIn
                 }
                 .onFailure {
                     _sessionState.value = SessionState.LoggedOut
                 }
+        }
+    }
+
+    // Load profile_id dari database
+    private fun loadUserData(userId: String) {
+        viewModelScope.launch {
+            authRepository.getUserDataFromDb(userId).onSuccess { data ->
+                val profileId = data["profile_id"] as? String
+                if (!profileId.isNullOrBlank()) {
+                    _profilePictureUrl.value = authRepository.getProfilePictureUrl(profileId)
+                } else {
+                    _profilePictureUrl.value = null
+                }
+            }
         }
     }
 
@@ -79,6 +99,12 @@ class AuthViewModel : ViewModel() {
             _authState.value = AuthState.Loading
             authRepository.login(email.trim(), password.trim())
                 .onSuccess {
+                    // Setelah login sukses, ambil data user
+                    authRepository.getCurrentUser().onSuccess { user ->
+                        _currentUserName.value = user.name
+                        _currentUserEmail.value = user.email
+                        loadUserData(user.id)
+                    }
                     _authState.value = AuthState.Success
                 }
                 .onFailure {
@@ -87,24 +113,9 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // 3. Proses Register
+    // 3. Proses Register (Sudah dihandle manual di RegisterScreen, tapi update state jika diperlukan)
     fun register(name: String, email: String, password: String) {
-        // Validasi input
-        if (name.isBlank() || email.isBlank() || password.isBlank()) {
-            _authState.value = AuthState.Error("Semua kolom wajib diisi!")
-            return
-        }
-
-        viewModelScope.launch {
-            _authState.value = AuthState.Loading
-            authRepository.register(email.trim(), password.trim(), name.trim())
-                .onSuccess {
-                    _authState.value = AuthState.Success
-                }
-                .onFailure {
-                    _authState.value = AuthState.Error("Pendaftaran gagal: ${it.message}")
-                }
-        }
+        // ... (Fungsi ini mungkin sudah jarang dipakai karena logika manual di View)
     }
 
     // 4. Proses Logout
@@ -113,6 +124,9 @@ class AuthViewModel : ViewModel() {
             _authState.value = AuthState.Loading
             authRepository.logout()
                 .onSuccess {
+                    _currentUserName.value = "User"
+                    _currentUserEmail.value = ""
+                    _profilePictureUrl.value = null
                     _authState.value = AuthState.Success
                 }
                 .onFailure {
@@ -128,8 +142,14 @@ class AuthViewModel : ViewModel() {
                 .onSuccess { user ->
                     _currentUserName.value = user.name
                     _currentUserEmail.value = user.email
+                    loadUserData(user.id)
                 }
         }
+    }
+
+    // 6. Update URL foto profil di State setelah upload manual di View
+    fun updateProfileUrl(newUrl: String?) {
+        _profilePictureUrl.value = newUrl
     }
 
     // 6. Reset state ke Idle (dipanggil setelah UI merespons state sukses/error)
