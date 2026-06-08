@@ -21,6 +21,7 @@ import com.classjava.app.ui.auth.RegisterScreen
 import com.classjava.app.ui.home.HomeScreen
 import com.classjava.app.ui.home.ProfileScreen
 import com.classjava.app.ui.home.SearchScreen
+import com.classjava.app.ui.leaderboard.LeaderboardPreviewScreen
 import com.classjava.app.ui.quiz.QuizPreviewScreen
 import com.classjava.app.ui.theme.ClassJavaTheme
 import com.classjava.app.viewmodel.AuthViewModel
@@ -101,6 +102,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 onNavigateToQuizPreview = { route ->
                     navController.navigate("quiz_preview/${route.replace("/", "_")}")
                 },
+                onNavigateToLeaderboard = {
+                    navController.navigate("leaderboard")
+                },
                 authViewModel = authViewModel
             )
         }
@@ -118,8 +122,26 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         popUpTo("home") { inclusive = true }
                     }
                 },
-                onNavigateToLeaderboard = { /* TODO */ },
+                onNavigateToLeaderboard = {
+                    navController.navigate("leaderboard")
+                },
                 authViewModel = authViewModel
+            )
+        }
+
+        // 4.5 Leaderboard
+        composable("leaderboard") {
+            LeaderboardPreviewScreen(
+                onNavigateToHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("profile") {
+                        popUpTo("home") { inclusive = false }
+                    }
+                }
             )
         }
 

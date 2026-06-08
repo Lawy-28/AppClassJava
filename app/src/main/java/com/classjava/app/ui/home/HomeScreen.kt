@@ -33,6 +33,7 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToQuizPreview: (String) -> Unit,
+    onNavigateToLeaderboard: () -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
     val studentName by authViewModel.currentUserName.collectAsState()
@@ -137,12 +138,17 @@ fun HomeScreen(
                         .border(1.5.dp, Color.White, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Leaderboard,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(38.dp)
-                    )
+                    IconButton(
+                        onClick = onNavigateToLeaderboard,
+                        modifier = Modifier.size(64.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Leaderboard,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(38.dp)
+                        )
+                    }
                 }
             }
         }
@@ -330,5 +336,10 @@ fun TopicItem(
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
-    HomeScreen(onNavigateToProfile = {}, onNavigateToSearch = {}, onNavigateToQuizPreview = {})
+    HomeScreen(
+        onNavigateToProfile = {},
+        onNavigateToSearch = {},
+        onNavigateToQuizPreview = {},
+        onNavigateToLeaderboard = {}
+    )
 }
