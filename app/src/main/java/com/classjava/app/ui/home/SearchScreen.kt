@@ -44,9 +44,9 @@ fun SearchScreen(
             QuizTopic("Arrays",        Icons.Default.List,             "quiz/arrays"),
             QuizTopic("Methods",       Icons.Default.Functions,        "quiz/methods"),
             QuizTopic("Looping",       Icons.Default.SyncAlt,         "quiz/looping"),
-            QuizTopic("Data Types",    Icons.Default.Dataset,          "quiz/datatypes"),
+            QuizTopic("Data Types",    Icons.Default.DataObject,       "quiz/datatypes"),
             QuizTopic("Constructors",  Icons.Default.Build,            "quiz/constructors"),
-            QuizTopic("Interfaces",    Icons.Default.Code,             "quiz/interfaces"),
+            QuizTopic("Interface",     Icons.Default.Code,             "quiz/interface"),
         )
     }
 
@@ -161,7 +161,7 @@ fun SearchScreen(
                             topic = topic,
                             accentOrange = accentOrange,
                             primaryBlue = primaryBlue,
-                            onMulaiClick = { onTopicSelected(topic.route) }
+                            onMulaiClick = { /* TODO: navigasi ke quiz langsung */ }
                         )
                     }
                 }

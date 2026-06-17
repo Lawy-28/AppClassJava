@@ -1,3 +1,39 @@
 <resources>
     <string name="app_name">Class [Java]</string>
+
+    <!-- Inheritance Topic -->
+    <string name="topic_inheritance_title">Inheritance</string>
+    <string name="topic_inheritance_desc">Inheritance adalah konsep pemrograman berorientasi objek (OOP) di mana sebuah kelas dapat mewarisi atribut dan metode dari kelas lain. Kelas yang mewarisi disebut subclass, sedangkan kelas yang diwarisi disebut superclass. Inheritance memungkinkan penggunaan ulang kode dan membuat struktur program lebih terorganisir.</string>
+    <string name="topic_inheritance_code">// Superclass\nclass Hewan {\n    String nama;\n\n    void makan() {\n        System.out.println(nama + \" sedang makan\");\n    }\n}\n\n// Subclass mewarisi Hewan\nclass Kucing extends Hewan {\n\n    void bersuara() {\n        System.out.println(nama + \" berkata: Meow!\");\n    }\n}\n\npublic class Main {\n    public static void main(String[] args) {\n        Kucing k = new Kucing();\n        k.nama = \"Kitty\";\n        k.makan();     // Dari superclass\n        k.bersuara();  // Dari subclass\n    }\n}</string>
+
+    <!-- Arrays Topic -->
+    <string name="topic_arrays_title">Arrays</string>
+    <string name="topic_arrays_desc">Array adalah struktur data yang digunakan untuk menyimpan banyak nilai dalam satu variabel dengan tipe data yang sama. Setiap elemen array memiliki indeks yang dimulai dari 0. Array sangat berguna ketika kita ingin menyimpan dan mengakses kumpulan data secara terstruktur.</string>
+    <string name="topic_arrays_code">public class ContohArray {\n    public static void main(String[] args) {\n\n        // Deklarasi array dengan 5 elemen\n        int[] angka = {10, 20, 30, 40, 50};\n\n        // Akses elemen berdasarkan indeks\n        System.out.println(angka[0]); // Output: 10\n        System.out.println(angka[2]); // Output: 30\n\n        // Tampilkan semua elemen\n        for (int i = 0; i &lt; angka.length; i++) {\n            System.out.println(\"Indeks \" + i + \" = \" + angka[i]);\n        }\n    }\n}</string>
+
+    <!-- Looping Topic -->
+    <string name="topic_looping_title">Looping</string>
+    <string name="topic_looping_desc">Looping (perulangan) adalah struktur kontrol yang digunakan untuk mengeksekusi blok kode secara berulang selama kondisi tertentu terpenuhi. Java memiliki tiga jenis loop utama yaitu for, while, dan do-while. Looping sangat berguna untuk memproses data dalam jumlah besar secara efisien.</string>
+    <string name="topic_looping_code">public class ContohLooping {\n    public static void main(String[] args) {\n\n        // For loop: cetak angka 1 sampai 5\n        for (int i = 1; i &lt;= 5; i++) {\n            System.out.println(\"For: \" + i);\n        }\n\n        // While loop\n        int j = 1;\n        while (j &lt;= 3) {\n            System.out.println(\"While: \" + j);\n            j++;\n        }\n\n        // Do-while loop\n        int k = 1;\n        do {\n            System.out.println(\"Do-While: \" + k);\n            k++;\n        } while (k &lt;= 3);\n    }\n}</string>
+
+    <!-- Methods Topic -->
+    <string name="topic_methods_title">Methods</string>
+    <string name="topic_methods_desc">Method adalah blok kode yang hanya berjalan saat dipanggil. Anda dapat meneruskan data ke dalam method. Method digunakan untuk melakukan tindakan tertentu dan membantu penggunaan kembali kode (reusability).</string>
+    <string name="topic_methods_code">public class Main {\n    static void sapaUser(String nama) {\n        System.out.println(\"Halo, \" + nama);\n    }\n\n    public static void main(String[] args) {\n        sapaUser(\"Irfan\");\n    }\n}</string>
+
+    <!-- Data Types Topic -->
+    <string name="topic_datatypes_title">Data Types</string>
+    <string name="topic_datatypes_desc">Tipe data menentukan ukuran dan jenis nilai yang dapat disimpan dalam variabel. Java memiliki tipe data primitif seperti int, boolean, char, dan tipe non-primitif seperti String.</string>
+    <string name="topic_datatypes_code">public class Main {\n    public static void main(String[] args) {\n        int angka = 10;\n        double desimal = 5.99;\n        char huruf = \'A\';\n        boolean status = true;\n        String teks = \"Java\";\n    }\n}</string>
+
+    <!-- Constructors Topic -->
+    <string name="topic_constructors_title">Constructors</string>
+    <string name="topic_constructors_desc">Constructor adalah method khusus yang digunakan untuk menginisialisasi objek. Constructor dipanggil saat objek kelas dibuat dan namanya harus sama dengan nama kelas.</string>
+    <string name="topic_constructors_code">class Mobil {\n    String merk;\n    Mobil(String m) {\n        merk = m;\n    }\n\n    public static void main(String[] args) {\n        Mobil mku = new Mobil(\"Toyota\");\n    }\n}</string>
+
+    <!-- Interface Topic -->
+    <string name="topic_interface_title">Interface</string>
+    <string name="topic_interface_desc">Interface adalah kelas abstrak yang digunakan untuk mengelompokkan method terkait dengan tubuh kosong. Digunakan untuk mencapai abstraksi total di Java.</string>
+    <string name="topic_interface_code">interface Hewan {\n    void suara();\n}\n\nclass Kucing implements Hewan {\n    public void suara() {\n        System.out.println(\"Meow\");\n    }\n}</string>
+
 </resources>

@@ -8,11 +8,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import com.classjava.app.R
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -20,6 +24,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 
+
+data class TopicPreviewContent(
+    val titleRes: Int,
+    val icon: ImageVector,
+    val descriptionRes: Int,
+    val codeExampleRes: Int
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,8 +43,52 @@ fun QuizPreviewScreen(
     val accentOrange = Color(0xFFE28743)
     val codeBackground = Color(0xFF1E1E2E)
 
-    // Ambil konten dari QuizPreviewContent.kt
-    val content = TopicPreviewData.allPreviews[topicRoute]
+    // Logika pemilihan data dipindahkan ke sini
+    val content = when (topicRoute) {
+        "quiz/inheritance" -> TopicPreviewContent(
+            titleRes = R.string.topic_inheritance_title,
+            icon = Icons.Default.AccountTree,
+            descriptionRes = R.string.topic_inheritance_desc,
+            codeExampleRes = R.string.topic_inheritance_code
+        )
+        "quiz/arrays" -> TopicPreviewContent(
+            titleRes = R.string.topic_arrays_title,
+            icon = Icons.Default.List,
+            descriptionRes = R.string.topic_arrays_desc,
+            codeExampleRes = R.string.topic_arrays_code
+        )
+        "quiz/looping" -> TopicPreviewContent(
+            titleRes = R.string.topic_looping_title,
+            icon = Icons.Default.SyncAlt,
+            descriptionRes = R.string.topic_looping_desc,
+            codeExampleRes = R.string.topic_looping_code
+        )
+        "quiz/methods" -> TopicPreviewContent(
+            titleRes = R.string.topic_methods_title,
+            icon = Icons.Default.Functions,
+            descriptionRes = R.string.topic_methods_desc,
+            codeExampleRes = R.string.topic_methods_code
+        )
+        "quiz/datatypes" -> TopicPreviewContent(
+            titleRes = R.string.topic_datatypes_title,
+            icon = Icons.Default.DataObject,
+            descriptionRes = R.string.topic_datatypes_desc,
+            codeExampleRes = R.string.topic_datatypes_code
+        )
+        "quiz/constructors" -> TopicPreviewContent(
+            titleRes = R.string.topic_constructors_title,
+            icon = Icons.Default.Build,
+            descriptionRes = R.string.topic_constructors_desc,
+            codeExampleRes = R.string.topic_constructors_code
+        )
+        "quiz/interface" -> TopicPreviewContent(
+            titleRes = R.string.topic_interface_title,
+            icon = Icons.Default.Code,
+            descriptionRes = R.string.topic_interface_desc,
+            codeExampleRes = R.string.topic_interface_code
+        )
+        else -> null
+    }
 
     Scaffold(
         topBar = {
@@ -86,7 +141,7 @@ fun QuizPreviewScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = content.title,
+                            text = stringResource(content.titleRes),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -148,7 +203,7 @@ fun QuizPreviewScreen(
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = content.title,
+                    text = stringResource(content.titleRes),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = primaryBlue
@@ -157,9 +212,9 @@ fun QuizPreviewScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Pengertian — diambil dari QuizPreviewContent.kt
+            // Pengertian — diambil dari strings.xml
             Text(
-                text = content.description,
+                text = stringResource(content.descriptionRes),
                 fontSize = 14.sp,
                 color = Color.DarkGray,
                 lineHeight = 22.sp
@@ -176,7 +231,7 @@ fun QuizPreviewScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Blok kode — diambil dari QuizPreviewContent.kt
+            // Blok kode — diambil dari strings.xml
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -185,7 +240,7 @@ fun QuizPreviewScreen(
             ) {
                 Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                     Text(
-                        text = content.codeExample,
+                        text = stringResource(content.codeExampleRes),
                         fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace,
                         color = Color(0xFFCDD6F4),

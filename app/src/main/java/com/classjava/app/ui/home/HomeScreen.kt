@@ -253,6 +253,30 @@ fun HomeScreen(
                         icon = Icons.Default.SyncAlt,
                         onItemClick = { onNavigateToQuizPreview("quiz/looping") }
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TopicItem(
+                        title = "Methods",
+                        icon = Icons.Default.Functions,
+                        onItemClick = { onNavigateToQuizPreview("quiz/methods") }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TopicItem(
+                        title = "Data Types",
+                        icon = Icons.Default.DataObject,
+                        onItemClick = { onNavigateToQuizPreview("quiz/datatypes") }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TopicItem(
+                        title = "Constructors",
+                        icon = Icons.Default.Build,
+                        onItemClick = { onNavigateToQuizPreview("quiz/constructors") }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TopicItem(
+                        title = "Interface",
+                        icon = Icons.Default.Code,
+                        onItemClick = { onNavigateToQuizPreview("quiz/interface") }
+                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
                 }
