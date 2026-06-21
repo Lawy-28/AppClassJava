@@ -18,15 +18,21 @@ import com.classjava.app.ui.home.ProfileScreen
 import com.classjava.app.ui.home.SearchScreen
 import com.classjava.app.ui.leaderboard.LeaderboardPreviewScreen
 import com.classjava.app.ui.quiz.QuizPreviewScreen
+import com.classjava.app.ui.quiz.SoalQuizScreen
 import com.classjava.app.viewmodel.AuthViewModel
 import com.classjava.app.viewmodel.SessionState
 
+/**
+ * NavHost Utama Aplikasi Class [Java].
+ * Mengelola seluruh rute navigasi antar screen menggunakan Jetpack Compose Navigation.
+ */
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
     val sessionState by authViewModel.sessionState.collectAsState()
 
+    // Splash/Checking State
     if (sessionState is SessionState.Checking) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -37,6 +43,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         return
     }
 
+    // Tentukan halaman awal berdasarkan status login
     val startDestination = if (sessionState is SessionState.LoggedIn) "home" else "login"
 
     NavHost(
@@ -44,7 +51,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         startDestination = startDestination,
         modifier = modifier
     ) {
-        // 1. Login
+        // --- 1. AUTH ROUTES ---
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
@@ -57,7 +64,6 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             )
         }
 
-        // 2. Register
         composable("register") {
             RegisterScreen(
                 onRegisterSuccess = {
@@ -74,7 +80,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             )
         }
 
-        // 3. Home
+        // --- 2. MAIN FEATURES (BOTTOM NAV) ---
         composable("home") {
             HomeScreen(
                 onNavigateToProfile = { navController.navigate("profile") },
@@ -89,7 +95,21 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             )
         }
 
-        // 4. Profile
+        composable("leaderboard") {
+            LeaderboardPreviewScreen(
+                onNavigateToHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("profile") {
+                        popUpTo("home") { inclusive = false }
+                    }
+                }
+            )
+        }
+
         composable("profile") {
             ProfileScreen(
                 onLogoutSuccess = {
@@ -109,23 +129,6 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             )
         }
 
-        // 4.5 Leaderboard
-        composable("leaderboard") {
-            LeaderboardPreviewScreen(
-                onNavigateToHome = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = true }
-                    }
-                },
-                onNavigateToProfile = {
-                    navController.navigate("profile") {
-                        popUpTo("home") { inclusive = false }
-                    }
-                }
-            )
-        }
-
-        // 5. Search
         composable("search") {
             SearchScreen(
                 onNavigateBack = { navController.popBackStack() },
@@ -135,14 +138,30 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             )
         }
 
-        // 6. Quiz Preview
+        // --- 3. QUIZ SYSTEM ---
+        
+        // Halaman Preview Materi & Persiapan Kuis
         composable("quiz_preview/{topicRoute}") { backStackEntry ->
             val encodedRoute = backStackEntry.arguments?.getString("topicRoute") ?: ""
             val topicRoute = encodedRoute.replace("_", "/")
             QuizPreviewScreen(
                 topicRoute = topicRoute,
                 onNavigateBack = { navController.popBackStack() },
-                onMulaiKuis = { /* TODO */ }
+                onMulaiKuis = { route ->
+                    navController.navigate(route)
+                }
+            )
+        }
+
+        // Halaman Pengerjaan Soal Kuis (Inheritance)
+        composable("quiz/inheritance") {
+            SoalQuizScreen(
+                onNavigateToLeaderboard = {
+                    navController.navigate("leaderboard") {
+                        // Bersihkan stack agar saat back dari leaderboard tidak kembali ke kuis
+                        popUpTo("home") { inclusive = false }
+                    }
+                }
             )
         }
     }

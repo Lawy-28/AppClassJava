@@ -14,6 +14,7 @@ object AppwriteClient {
     lateinit var storage: Storage
 
     // 2. Kumpulan ID Penting (Asli dari proyek Appwrite Anda)
+    const val PROJECT_ID = "6a126b48002b3fb6cbe7"
     const val DATABASE_ID = "6a126bd2003a8cf7db6f"
     const val COLLECTION_TOPICS = "topics"
     const val COLLECTION_QUIZZES = "quizzes"
@@ -25,7 +26,7 @@ object AppwriteClient {
     fun initialize(context: Context) {
         client = Client(context)
             .setEndpoint("https://sgp.cloud.appwrite.io/v1")
-            .setProject("6a126b48002b3fb6cbe7") // Project ID Anda
+            .setProject(PROJECT_ID) // Project ID Anda
 
         account = Account(client)
         databases = Databases(client)
