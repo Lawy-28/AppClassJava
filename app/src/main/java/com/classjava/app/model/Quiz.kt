@@ -14,7 +14,7 @@ data class Quiz(
     companion object {
         /**
          * Fungsi helper untuk mengonversi data Map dari Appwrite menjadi objek Quiz.
-         * Atribut 'options' diasumsikan disimpan sebagai String yang dipisahkan koma (e.g. "A,B,C,D").
+         * Menggunakan delimiter koma ',' sesuai dengan permintaan terbaru.
          */
         fun fromMap(id: String, map: Map<String, Any>): Quiz {
             val optionsRaw = map["options"] as? String ?: ""
@@ -24,6 +24,7 @@ data class Quiz(
                 question = map["question"] as? String ?: "",
                 correctAnswer = map["correct_answer"] as? String ?: "",
                 explanation = map["explanation"] as? String ?: "",
+                // Mengonversi string options menjadi List dengan pemisah koma
                 options = optionsRaw.split(",").map { it.trim() }
             )
         }

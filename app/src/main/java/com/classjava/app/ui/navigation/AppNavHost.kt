@@ -148,14 +148,17 @@ fun AppNavHost(modifier: Modifier = Modifier) {
                 topicRoute = topicRoute,
                 onNavigateBack = { navController.popBackStack() },
                 onMulaiKuis = { route ->
+                    // route biasanya berbentuk "quiz/inheritance", "quiz/arrays", dll
                     navController.navigate(route)
                 }
             )
         }
 
-        // Halaman Pengerjaan Soal Kuis (Inheritance)
-        composable("quiz/inheritance") {
+        // Halaman Pengerjaan Soal Kuis (Dinamis berdasarkan topicId)
+        composable("quiz/{topicId}") { backStackEntry ->
+            val topicId = backStackEntry.arguments?.getString("topicId") ?: "inheritance"
             SoalQuizScreen(
+                topicId = topicId,
                 onNavigateToLeaderboard = {
                     navController.navigate("leaderboard") {
                         // Bersihkan stack agar saat back dari leaderboard tidak kembali ke kuis

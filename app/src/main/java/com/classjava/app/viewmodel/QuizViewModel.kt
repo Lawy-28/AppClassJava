@@ -1,5 +1,6 @@
 package com.classjava.app.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -7,16 +8,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.classjava.app.config.AppwriteClient
 import com.classjava.app.model.Quiz
-import android.util.Log
 import io.appwrite.ID
 import io.appwrite.Permission
-import io.appwrite.Role
 import io.appwrite.Query
+import io.appwrite.Role
 import io.appwrite.exceptions.AppwriteException
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel untuk menangani logika permainan kuis Inheritance.
+ * ViewModel untuk menangani logika kuis secara dinamis berdasarkan topik.
  */
 class QuizViewModel : ViewModel() {
 
@@ -30,33 +30,52 @@ class QuizViewModel : ViewModel() {
     
     // State skor dan status akhir
     var score by mutableStateOf(0)
-    var isLoading by mutableStateOf(true)
+    var isLoading by mutableStateOf(false)
     var isFinished by mutableStateOf(false)
     var isSavingScore by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
+    
+    // State untuk penjelasan soal yang aktif
+    var selectedExplanation by mutableStateOf<String?>(null)
+    
+    // Menyimpan ID topik yang sedang aktif dikerjakan
+    private var currentTopicId: String = ""
 
     init {
-        fetchInheritanceQuizzes()
+        // Init kosong, pemanggilan dilakukan secara dinamis via loadQuizzesByTopic
     }
 
     /**
-     * Mengambil data kuis dari Appwrite dengan filter topic_id = inheritance.
+     * Memuat daftar kuis berdasarkan topik tertentu dan mereset semua state ke nilai awal.
+     * @param topicId ID topik kuis (misal: inheritance, arrays, looping)
      */
-    private fun fetchInheritanceQuizzes() {
+    fun loadQuizzesByTopic(topicId: String) {
+        currentTopicId = topicId
+        
+        // Reset seluruh state kuis agar bersih untuk pengerjaan baru
+        questions = emptyList()
+        currentIndex = 0
+        selectedAnswer = null
+        isAnswered = false
+        score = 0
+        isFinished = false
+        errorMessage = null
+        selectedExplanation = null
+        
         viewModelScope.launch {
             try {
                 isLoading = true
-                errorMessage = null
+                Log.d("QUIZ_DEBUG", "Memuat soal untuk topik: $topicId")
                 
                 val response = AppwriteClient.databases.listDocuments(
                     databaseId = AppwriteClient.DATABASE_ID,
                     collectionId = AppwriteClient.COLLECTION_QUIZZES,
                     queries = listOf(
-                        Query.equal("topic_id", "inheritance")
+                        Query.equal("topic_id", topicId)
                     )
                 )
 
-                // Map dokumen ke model Quiz, acak, dan ambil 10 soal
+                // Map dokumen ke model Quiz, acak, dan ambil maksimal 10 soal
                 val allQuizzes = response.documents.map { doc ->
                     Quiz.fromMap(doc.id, doc.data)
                 }
@@ -64,7 +83,7 @@ class QuizViewModel : ViewModel() {
                 if (allQuizzes.isNotEmpty()) {
                     questions = allQuizzes.shuffled().take(10)
                 } else {
-                    errorMessage = "Tidak ada soal yang ditemukan untuk topik ini."
+                    errorMessage = "Tidak ada soal yang ditemukan untuk topik: $topicId"
                 }
                 
                 isLoading = false
@@ -82,10 +101,13 @@ class QuizViewModel : ViewModel() {
      * Memproses jawaban yang dipilih oleh user.
      */
     fun submitAnswer(answer: String) {
-        if (isAnswered) return // Mencegah klik ganda
+        if (isAnswered) return // Mencegah klik ganda pada soal yang sama
         
         selectedAnswer = answer
         isAnswered = true
+        
+        // Mengisi penjelasan dari soal yang sedang aktif
+        selectedExplanation = questions[currentIndex].explanation
         
         // Cek kebenaran jawaban dan update skor (100 poin per soal benar)
         if (answer == questions[currentIndex].correctAnswer) {
@@ -101,6 +123,7 @@ class QuizViewModel : ViewModel() {
             currentIndex++
             selectedAnswer = null
             isAnswered = false
+            selectedExplanation = null // Reset penjelasan untuk soal berikutnya
         } else {
             submitFinalScore()
         }
@@ -108,32 +131,31 @@ class QuizViewModel : ViewModel() {
 
     /**
      * Menyimpan skor akhir user ke koleksi Leaderboard di Appwrite.
-     * Menggunakan logika "High Score Upsert": hanya update jika skor baru lebih tinggi.
+     * Menggunakan logika "High Score Upsert" berdasarkan user_id dan topic_id.
      */
-    fun submitFinalScore() {
+    private fun submitFinalScore() {
         viewModelScope.launch {
             try {
                 isSavingScore = true
-                Log.d("QUIZ_DEBUG", "Memulai proses simpan skor...")
+                Log.d("QUIZ_DEBUG", "Menyimpan skor kuis topik: $currentTopicId")
                 
-                // 1. Dapatkan data user dari Appwrite Account Service
                 val userAccount = AppwriteClient.account.get()
                 val currentUserId = userAccount.id
                 val userName = userAccount.name.ifBlank { userAccount.email }
                 val newScore = score.toInt()
-                
-                Log.d("QUIZ_DEBUG", "User ID: $currentUserId, Name: $userName, Score: $newScore")
 
-                // 2. Query pengecekan berdasarkan user_id
+                // 1. Cek apakah user sudah punya rekor di topik ini
                 val existingDocs = AppwriteClient.databases.listDocuments(
                     databaseId = AppwriteClient.DATABASE_ID,
                     collectionId = AppwriteClient.COLLECTION_LEADERBOARD,
-                    queries = listOf(Query.equal("user_id", currentUserId))
+                    queries = listOf(
+                        Query.equal("user_id", currentUserId),
+                        Query.equal("topic_id", currentTopicId)
+                    )
                 )
 
                 if (existingDocs.documents.isEmpty()) {
-                    // 3. JIKA BELUM ADA: Buat dokumen baru
-                    Log.d("QUIZ_DEBUG", "Data user belum ada, membuat dokumen baru...")
+                    // 2. JIKA BELUM ADA: Buat dokumen baru dengan hak akses publik
                     AppwriteClient.databases.createDocument(
                         databaseId = AppwriteClient.DATABASE_ID,
                         collectionId = AppwriteClient.COLLECTION_LEADERBOARD,
@@ -141,43 +163,34 @@ class QuizViewModel : ViewModel() {
                         data = mapOf(
                             "user_id" to currentUserId,
                             "student_name" to userName,
-                            "topic_id" to "inheritance",
+                            "topic_id" to currentTopicId,
                             "score" to newScore
                         ),
                         permissions = listOf(Permission.read(Role.any()))
                     )
-                    Log.d("QUIZ_DEBUG", "Berhasil membuat dokumen baru.")
                 } else {
-                    // 4. JIKA SUDAH ADA: Bandingkan skor
+                    // 3. JIKA SUDAH ADA: Update jika skor baru lebih tinggi (rekor baru)
                     val doc = existingDocs.documents[0]
                     val oldScore = (doc.data["score"] as? Number)?.toInt() ?: 0
-                    Log.d("QUIZ_DEBUG", "Data user ditemukan. Skor lama: $oldScore, Skor baru: $newScore")
 
                     if (newScore > oldScore) {
-                        Log.d("QUIZ_DEBUG", "Skor baru lebih tinggi, melakukan update...")
                         AppwriteClient.databases.updateDocument(
                             databaseId = AppwriteClient.DATABASE_ID,
                             collectionId = AppwriteClient.COLLECTION_LEADERBOARD,
                             documentId = doc.id,
-                            data = mapOf(
-                                "score" to newScore
-                            )
+                            data = mapOf("score" to newScore)
                         )
-                        Log.d("QUIZ_DEBUG", "Berhasil update skor tertinggi.")
-                    } else {
-                        Log.d("QUIZ_DEBUG", "Skor baru tidak lebih tinggi, mengabaikan update.")
                     }
                 }
                 
                 isFinished = true
                 isSavingScore = false
             } catch (e: AppwriteException) {
-                Log.e("QUIZ_DEBUG", "Error Appwrite: ${e.message}")
-                errorMessage = "Gagal memproses skor: ${e.message}"
+                Log.e("QUIZ_DEBUG", "Error simpan skor: ${e.message}")
+                errorMessage = "Gagal menyimpan skor: ${e.message}"
                 isFinished = true
                 isSavingScore = false
             } catch (e: Exception) {
-                Log.e("QUIZ_DEBUG", "Error Sistem: ${e.message}")
                 errorMessage = "Terjadi kesalahan: ${e.message}"
                 isFinished = true
                 isSavingScore = false

@@ -412,6 +412,7 @@ fun LeaderboardItem(rank: Int, entry: LeaderboardEntry, itemBackground: Color) {
 }
 
 data class LeaderboardEntry(
+    val userId: String = "",
     val username: String,
     val score: Int,
     val profilePicId: String = ""

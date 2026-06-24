@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,23 +18,31 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.classjava.app.viewmodel.QuizViewModel
 
 /**
- * Screen utama untuk pengerjaan soal kuis.
+ * Screen utama untuk pengerjaan soal kuis yang bersifat dinamis berdasarkan topik.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SoalQuizScreen(
+    topicId: String,
     onNavigateToLeaderboard: () -> Unit,
     viewModel: QuizViewModel = viewModel()
 ) {
     val primaryBlue = Color(0xFF0F3D6F)
     val accentOrange = Color(0xFFE28743)
 
+    // PERBAIKAN: Memicu pemuatan kuis saat layar pertama kali muncul atau saat topicId berubah
+    LaunchedEffect(topicId) {
+        viewModel.loadQuizzesByTopic(topicId)
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { 
+                    // Judul dinamis (Contoh: "Kuis Data types")
+                    val displayTitle = topicId.replace("_", " ").replaceFirstChar { it.uppercase() }
                     Text(
-                        "Kuis Inheritance", 
+                        text = "Kuis $displayTitle", 
                         color = Color.White, 
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
@@ -50,7 +59,7 @@ fun SoalQuizScreen(
                 .padding(16.dp)
         ) {
             when {
-                // Keadaan Loading (Awal atau saat simpan skor)
+                // Keadaan Loading atau Simpan Skor
                 viewModel.isLoading || viewModel.isSavingScore -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
@@ -83,7 +92,7 @@ fun SoalQuizScreen(
                     )
                 }
 
-                // Keadaan Error
+                // Keadaan Error atau Kosong
                 viewModel.errorMessage != null -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
@@ -106,7 +115,7 @@ fun SoalQuizScreen(
 }
 
 /**
- * Komponen konten saat kuis sedang berlangsung.
+ * Komponen konten pengerjaan kuis.
  */
 @Composable
 fun QuizPlayContent(
@@ -123,7 +132,7 @@ fun QuizPlayContent(
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Bar Progress & Skor
+        // Bar Progress & Skor Berjalan
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -155,40 +164,29 @@ fun QuizPlayContent(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Pertanyaan
+        // Card Pertanyaan (Mendukung Teks dan Kode)
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
             shape = RoundedCornerShape(12.dp)
         ) {
-            val rawQuestion = currentQuiz.question.replace("\\n", "\n").replace("\\\n", "\n")
-            
-            // Logika deteksi kode Java
+            // Memproses \n agar terbaca baris baru
+            val rawQuestion = currentQuiz.question.replace("\\n", "\n").replace("/n", "\n")
             val codeKeywords = listOf("class ", "void ", "public ", "static ", "int ", "String ")
             val hasCode = codeKeywords.any { rawQuestion.contains(it) }
 
             Column(modifier = Modifier.padding(16.dp)) {
                 if (hasCode) {
-                    // Cari baris pertama yang mengandung keyword kode
                     val lines = rawQuestion.split("\n")
                     val codeStartIndex = lines.indexOfFirst { line -> 
                         codeKeywords.any { kw -> line.contains(kw) } 
                     }
 
                     if (codeStartIndex != -1) {
-                        // Bagian Deskripsi (sebelum kode)
                         val description = lines.subList(0, codeStartIndex).joinToString("\n").trim()
                         if (description.isNotEmpty()) {
-                            Text(
-                                text = description,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF333333),
-                                modifier = Modifier.padding(bottom = 12.dp)
-                            )
+                            Text(text = description, fontSize = 16.sp, modifier = Modifier.padding(bottom = 12.dp))
                         }
-
-                        // Bagian Blok Kode (dari index pertama kode sampai akhir)
                         val codeBlock = lines.subList(codeStartIndex, lines.size).joinToString("\n").trim()
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
@@ -204,17 +202,12 @@ fun QuizPlayContent(
                                 lineHeight = 18.sp
                             )
                         }
-                    } else {
-                        // Fallback jika deteksi index gagal
-                        Text(text = rawQuestion, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 } else {
-                    // Teks Biasa
                     Text(
                         text = rawQuestion,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF333333),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -224,24 +217,17 @@ fun QuizPlayContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Pilihan Jawaban (A, B, C, D)
+        // Pilihan Jawaban
         currentQuiz.options.forEachIndexed { index, option ->
-            val label = when(index) {
-                0 -> "A. "
-                1 -> "B. "
-                2 -> "C. "
-                3 -> "D. "
-                else -> ""
-            }
-
+            val label = when(index) { 0 -> "A. "; 1 -> "B. "; 2 -> "C. "; 3 -> "D. "; else -> "" }
+            
             val isSelected = viewModel.selectedAnswer == option
             val isCorrect = option == currentQuiz.correctAnswer
             
-            // Logika Warna Dinamis
             val containerColor = when {
                 !viewModel.isAnswered -> Color.White
-                isCorrect -> Color(0xFF4CAF50) // Hijau jika ini jawaban benar
-                isSelected && !isCorrect -> Color(0xFFF44336) // Merah jika user salah pilih
+                isCorrect -> Color(0xFF4CAF50) // Hijau jika benar
+                isSelected && !isCorrect -> Color(0xFFF44336) // Merah jika salah pilih
                 else -> Color.White
             }
 
@@ -251,36 +237,21 @@ fun QuizPlayContent(
                 Color.Black
             }
 
-            val borderColor = if (isSelected && !viewModel.isAnswered) {
-                accentColor 
-            } else {
-                Color.LightGray
-            }
-
             OutlinedButton(
                 onClick = { viewModel.submitAnswer(option) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = containerColor,
                     contentColor = contentColor
                 ),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
-                    brush = androidx.compose.ui.graphics.SolidColor(borderColor)
-                ),
                 enabled = !viewModel.isAnswered
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // PERBAIKAN: Render karakter baris baru (\n) pada teks pilihan jawaban
                     Text(
-                        text = label + option,
-                        fontSize = 16.sp,
+                        text = label + option.replace("\\n", "\n").replace("/n", "\n"), 
+                        fontSize = 16.sp, 
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -289,13 +260,40 @@ fun QuizPlayContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Tombol Navigasi
+        // Card Penjelasan (Hanya muncul jika sudah dijawab)
+        if (viewModel.isAnswered && viewModel.selectedExplanation != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Penjelasan:",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = viewModel.selectedExplanation!!.replace("\\n", "\n"),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        lineHeight = 20.sp
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         if (viewModel.isAnswered) {
             Button(
                 onClick = { viewModel.nextQuestion() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -325,49 +323,19 @@ fun SummaryResult(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "Kuis Selesai!", 
-            fontSize = 32.sp, 
-            fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF0F3D6F)
-        )
+        Text(text = "Kuis Selesai!", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F3D6F))
         Spacer(modifier = Modifier.height(24.dp))
-        
-        Text(
-            text = "Skor Akhir Anda", 
-            fontSize = 18.sp,
-            color = Color.Gray
-        )
-        
-        Text(
-            text = "$score", 
-            fontSize = 80.sp, 
-            fontWeight = FontWeight.Black, 
-            color = accentColor
-        )
-        
-        Text(
-            text = "Poin", 
-            fontSize = 20.sp, 
-            fontWeight = FontWeight.Bold,
-            color = accentColor
-        )
-
+        Text(text = "Skor Akhir Anda", fontSize = 18.sp, color = Color.Gray)
+        Text(text = "$score", fontSize = 80.sp, fontWeight = FontWeight.Black, color = accentColor)
+        Text(text = "Poin", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = accentColor)
         Spacer(modifier = Modifier.height(48.dp))
-
         Button(
             onClick = onBackToLeaderboard,
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth(0.8f).height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F3D6F))
         ) {
-            Text(
-                text = "Lihat Leaderboard",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Text(text = "Lihat Leaderboard", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
