@@ -51,7 +51,7 @@ fun SearchScreen(
     }
 
     val filteredTopics = remember(searchQuery) {
-        if (searchQuery.isBlank()) allTopics
+        if (searchQuery.isBlank()) emptyList()
         else allTopics.filter { it.title.contains(searchQuery, ignoreCase = true) }
     }
 
@@ -134,7 +134,7 @@ fun SearchScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            if (filteredTopics.isEmpty()) {
+            if (searchQuery.isNotBlank() && filteredTopics.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -143,25 +143,25 @@ fun SearchScreen(
                         Icon(
                             imageVector = Icons.Default.SearchOff,
                             contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.5f),
+                            tint = Color.Gray.copy(alpha = 0.5f),
                             modifier = Modifier.size(64.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Topik tidak ditemukan",
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = Color.Gray,
                             fontSize = 14.sp
                         )
                     }
                 }
-            } else {
+            } else if (filteredTopics.isNotEmpty()) {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(filteredTopics) { topic ->
                         SearchTopicItem(
                             topic = topic,
                             accentOrange = accentOrange,
                             primaryBlue = primaryBlue,
-                            onMulaiClick = { /* TODO: navigasi ke quiz langsung */ }
+                            onMulaiClick = { onTopicSelected(topic.route) }
                         )
                     }
                 }

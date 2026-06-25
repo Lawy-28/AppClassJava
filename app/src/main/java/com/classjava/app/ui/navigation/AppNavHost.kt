@@ -133,7 +133,8 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             SearchScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onTopicSelected = { route ->
-                    navController.navigate("quiz_preview/${route.replace("/", "_")}")
+                    // Langsung ke kuis tanpa lewat preview
+                    navController.navigate(route)
                 }
             )
         }
