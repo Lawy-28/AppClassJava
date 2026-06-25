@@ -3,6 +3,7 @@ package com.classjava.app.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.classjava.app.repository.AuthRepository
+import com.classjava.app.repository.LeaderboardRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -26,6 +27,7 @@ class AuthViewModel : ViewModel() {
 
     // Repository yang bertugas komunikasi dengan Appwrite
     private val authRepository = AuthRepository()
+    private val leaderboardRepository = LeaderboardRepository()
 
     // --- State Management ---
     // StateFlow untuk state aksi (login/register/logout)
@@ -48,6 +50,10 @@ class AuthViewModel : ViewModel() {
     private val _profilePictureUrl = MutableStateFlow<String?>(null)
     val profilePictureUrl: StateFlow<String?> = _profilePictureUrl
 
+    // StateFlow untuk menyimpan skor total user
+    private val _currentUserScore = MutableStateFlow(0)
+    val currentUserScore: StateFlow<Int> = _currentUserScore
+
     // Dipanggil sekali saat ViewModel pertama dibuat, untuk cek sesi login
     init {
         checkSession()
@@ -63,8 +69,9 @@ class AuthViewModel : ViewModel() {
                 .onSuccess { user ->
                     _currentUserName.value = user.name
                     _currentUserEmail.value = user.email
-                    // Load data tambahan (profile_id)
+                    // Load data tambahan (profile_id & score)
                     loadUserData(user.id)
+                    loadUserScore(user.id)
                     _sessionState.value = SessionState.LoggedIn
                 }
                 .onFailure {
@@ -143,6 +150,7 @@ class AuthViewModel : ViewModel() {
                     _currentUserName.value = user.name
                     _currentUserEmail.value = user.email
                     loadUserData(user.id)
+                    loadUserScore(user.id)
                 }
         }
     }
@@ -152,7 +160,16 @@ class AuthViewModel : ViewModel() {
         _profilePictureUrl.value = newUrl
     }
 
-    // 6. Reset state ke Idle (dipanggil setelah UI merespons state sukses/error)
+    // Ambil skor terbaru dari database
+    fun loadUserScore(userId: String) {
+        viewModelScope.launch {
+            leaderboardRepository.getUserTotalScore(userId).onSuccess { totalScore ->
+                _currentUserScore.value = totalScore
+            }
+        }
+    }
+
+    // 7. Reset state ke Idle (dipanggil setelah UI merespons state sukses/error)
     fun resetState() {
         _authState.value = AuthState.Idle
     }

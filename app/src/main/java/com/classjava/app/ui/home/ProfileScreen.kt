@@ -47,6 +47,7 @@ fun ProfileScreen(
     val studentName by authViewModel.currentUserName.collectAsState()
     val studentEmail by authViewModel.currentUserEmail.collectAsState()
     val profileUrl by authViewModel.profilePictureUrl.collectAsState()
+    val totalScore by authViewModel.currentUserScore.collectAsState()
 
     var isUploading by remember { mutableStateOf(false) }
 
@@ -250,8 +251,7 @@ fun ProfileScreen(
             // Info Card
             Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp),
+                    .fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = backgroundCard),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -289,6 +289,28 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                             // Email dari ViewModel
                             Text(text = studentEmail, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Score Row (Baru)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = accentOrange,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Star, contentDescription = null, tint = Color.White)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "Total Skor: $totalScore Poin",
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold
+                            )
                         }
                     }
                 }

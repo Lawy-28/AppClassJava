@@ -59,4 +59,25 @@ class LeaderboardRepository {
             }
         }
     }
+
+    /**
+     * Mengambil total skor akumulatif dari semua topik untuk user ID tertentu.
+     */
+    suspend fun getUserTotalScore(userId: String): Result<Int> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = databaseService.listDocuments(
+                    databaseId = AppwriteClient.DATABASE_ID,
+                    collectionId = AppwriteClient.COLLECTION_LEADERBOARD,
+                    queries = listOf(
+                        Query.equal("user_id", userId)
+                    )
+                )
+                val totalScore = response.documents.sumOf { (it.data["score"] as? Number)?.toInt() ?: 0 }
+                Result.success(totalScore)
+            } catch (e: AppwriteException) {
+                Result.failure(e)
+            }
+        }
+    }
 }
