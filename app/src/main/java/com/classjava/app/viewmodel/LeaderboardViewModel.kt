@@ -3,7 +3,7 @@ package com.classjava.app.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.classjava.app.repository.LeaderboardRepository
-import com.classjava.app.ui.leaderboard.LeaderboardEntry
+import com.classjava.app.data.model.LeaderboardEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

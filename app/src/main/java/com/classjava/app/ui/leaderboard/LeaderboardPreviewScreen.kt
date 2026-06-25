@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.classjava.app.config.AppwriteClient
+import com.classjava.app.data.model.LeaderboardEntry
 import com.classjava.app.viewmodel.LeaderboardState
 import com.classjava.app.viewmodel.LeaderboardViewModel
 
@@ -410,13 +411,6 @@ fun LeaderboardItem(rank: Int, entry: LeaderboardEntry, itemBackground: Color) {
         )
     }
 }
-
-data class LeaderboardEntry(
-    val userId: String = "",
-    val username: String,
-    val score: Int,
-    val profilePicId: String = ""
-)
 
 @Preview(showBackground = true)
 @Composable
